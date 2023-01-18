@@ -1,0 +1,113 @@
+# Default values for git-tag-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+namespace: default
+
+image:
+  repository: ""
+  pullPolicy: IfNotPresent
+  tag: "1.0.0"
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "git-tag-exporter"
+
+secrets:
+  defaultSecret:
+    enabled: false
+    annotations: {}
+  sealedSecret:
+    enabled: false
+    annotations:
+      sealedsecrets.bitnami.com/cluster-wide: "true"
+  data:
+    GITLAB_API_TOKEN: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 2000
+
+securityContext:
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+  runAsUser: 1000
+  runAsGroup: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+serviceMonitor:
+  enabled: true
+  annotations: {}
+  promOperatorSelector:
+    prometheus: default
+  interval: 60s
+  scrapeTimeout: 10s
+  path: /metrics
+  port: http
+  relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      targetLabel: node
+      action: replace
+
+resources:
+   limits:
+     cpu: 100m
+     memory: 128Mi
+   requests:
+     cpu: 100m
+     memory: 128Mi
+
+livenessProbe:
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 1
+  successThreshold: 1
+  failureThreshold: 3
+  httpGet:
+    path: /
+    port: http
+
+readinessProbe:
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 1
+  successThreshold: 1
+  failureThreshold: 3
+  httpGet:
+    path: /
+    port: http
+
+exporterConfig:
+  main:
+    exporterAddress: "0.0.0.0"
+    exporterPort: 8090  # Exposed port for metrics scraping.
+    pollingTimeoutSec: 60  # Metric generation interval in sec.
+    gitlabUrl: "https://gitlab.com/"
+    logLevel: info  # info, debug
+    # Keep single quotes, it's requirement!
+    releaseTagPattern: '^\d+\.\d+\.\d+$'
+    releaseCandidateTagPattern: '^\d+\.\d+\.\d+-rc$'
+
+  #
+  # Gitlab projects mapping.
+  #
+  gitProjects: []
+#    - name: my-awesome-project
+#      gitProjectPath: my-awesome-group/my-awesome-subgroup/my-awesome-project
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

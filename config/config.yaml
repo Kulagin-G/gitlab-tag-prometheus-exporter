@@ -1,0 +1,20 @@
+---
+config:
+#
+# Main exporter configuration.
+#
+  main:
+    exporterAddress: 0.0.0.0
+    exporterPort: 8090  # Exposed port for metrics scraping.
+    pollingTimeoutSec: 60  # Metric generation interval in sec.
+    gitlabUrl: "https://gitlab.com/"
+    logLevel: info  # info, debug
+    releaseTagPattern: '^\d+\.\d+\.\d+$'
+    releaseCandidateTagPattern: '^\d+\.\d+\.\d+-rc$'
+
+#
+# Gitlab projects mapping.
+#
+  gitProjects:
+    - name: my-awesome-project
+      gitProjectPath: my-awesome-group/my-awesome-subgroup/my-awesome-project
