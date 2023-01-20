@@ -18,14 +18,15 @@ from libs.git import GitMetricGenerator
 from libs.common import load_yaml_file
 
 
-def start_prometheus_client(config: YAMLObject):
+def start_prometheus_client(config: YAMLObject, dependent_thread: Thread):
     """
     Func object for individual Thread.
 
+    :param dependent_thread: dependent thread to stop client if any errors.
     :param config: YAMLObject
     :return:
     """
-    pc = PrometheusClient(config=config)
+    pc = PrometheusClient(config=config, dependency=dependent_thread)
     pc.start_client()
 
 
@@ -74,14 +75,6 @@ def main():
     gms = GitMetricGenerator(config=config)
 
     if gms.health:
-        prometheus_client: Thread = Thread(
-            target=start_prometheus_client, args=(config,)
-        )
-        prometheus_client.start()
-        logger.info(
-            f"PrometheusClient thread has been started: {prometheus_client.native_id}"
-        )
-
         git_metrics: Thread = Thread(
             target=start_git_metrics,
             daemon=True,
@@ -92,6 +85,17 @@ def main():
             f"GitMetricGenerator thread has been started: {git_metrics.native_id}"
         )
 
+        prometheus_client: Thread = Thread(
+            target=start_prometheus_client,
+            args=(
+                config,
+                git_metrics,
+            ),
+        )
+        prometheus_client.start()
+        logger.info(
+            f"PrometheusClient thread has been started: {prometheus_client.native_id}"
+        )
         prometheus_client.join()
     else:
         logger.error("Gitlab thread initialization failure!")

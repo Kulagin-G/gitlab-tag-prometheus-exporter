@@ -5,6 +5,7 @@ Git parser and metrics generator.
 import copy
 import re
 import os
+
 import gitlab
 from loguru import logger
 
@@ -121,7 +122,11 @@ class GitParser:
         :return: list | dict
         """
         if add_meta:
-            return {"project_name": project.name, "tags": project.tags.list(all=True)}
+            return {
+                "project_name": project.name,
+                "repository": project.ssh_url_to_repo,
+                "tags": project.tags.list(all=True),
+            }
         else:
             return project.tags.list(all=True)
 
@@ -140,7 +145,19 @@ class GitParser:
         )
         logger.debug(f"All available tags: {project_tags}")
         for element in project_tags:
-            project = {"project_name": element["project_name"], "semver_tags": []}
+            try:
+                project = {
+                    "project_name": element["project_name"],
+                    "repository": element["repository"],
+                    "semver_tags": [],
+                }
+            except TypeError:
+                logger.error("GitlabAPI returned an error, see logs above!")
+                project = {
+                    "project_name": "GitlabApiError",
+                    "repository": "GitlabApiError",
+                    "semver_tags": [],
+                }
             for tag in element["tags"]:
                 if is_semver(tag=tag.name):
                     project["semver_tags"].append(tag)
@@ -168,12 +185,12 @@ class GitMetricGenerator(GitParser):
         self.rc_tag_metric = Info(
             "gitlab_project_rc_tag_info",
             "The latest release-candidate tag from project.",
-            ["project_name", "tag_version"],
+            ["project_name", "repository", "tag_version"],
         )
         self.rel_tag_metric = Info(
             "gitlab_project_rel_tag_info",
             "The latest release tag project.",
-            ["project_name", "tag_version"],
+            ["project_name","repository",  "tag_version"],
         )
         logger.debug(f"GitMetricGenerator class initialization: {self.__dict__}")
         super().__init__(config=config)
@@ -203,7 +220,9 @@ class GitMetricGenerator(GitParser):
             logger.debug(
                 f'Updating data: {element["project_name"]}: {element["semver_tags"]}'
             )
-            self.rc_tag_metric.labels(element["project_name"], element["semver_tags"])
+            self.rc_tag_metric.labels(
+                element["project_name"], element["repository"], element["semver_tags"]
+            )
 
     def metric_gitlab_rel_tag_info(self, data: list):
         """
@@ -218,7 +237,9 @@ class GitMetricGenerator(GitParser):
             logger.debug(
                 f'Updating data: {element["project_name"]}: {element["semver_tags"]}'
             )
-            self.rel_tag_metric.labels(element["project_name"], element["semver_tags"])
+            self.rel_tag_metric.labels(
+                element["project_name"], element["repository"], element["semver_tags"]
+            )
 
     def generate_metrics(self, **kwargs: list):
         """

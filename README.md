@@ -5,10 +5,10 @@ A simple Prometheus format metric generator and exporter tool based on data with
 
 Both metrics use custom regex to sort all fetched tags, also only semver compatible tags will be fetched:
 
-|         Metric name         |             Description              | Active labels             | Type |
-|:---------------------------:|:------------------------------------:|---------------------------|:----:|
-| gitlab_project_rc_tag_info  | The latest release candidate git tag | project_name, tag_version | info |
-| gitlab_project_rel_tag_info |      The latest release git tag      | project_name, tag_version | info |
+|         Metric name         |             Description              | Active labels                         | Type |
+|:---------------------------:|:------------------------------------:|---------------------------------------|:----:|
+| gitlab_project_rc_tag_info  | The latest release candidate git tag | project_name, tag_version, repository | info |
+| gitlab_project_rel_tag_info |      The latest release git tag      | project_name, tag_version, repository | info |
 
 
 ## Sealed secrets
